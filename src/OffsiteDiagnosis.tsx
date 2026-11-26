@@ -5,6 +5,7 @@ import {
 import {
   analyze, CATEGORIES, CATEGORY_ACTION, Category, Competitor, ENGINES, OffsiteProject, OffsiteRun, pct, Rate, splitList,
 } from './offsite';
+import PresencePanel from './PresencePanel';
 
 const input = 'w-full bg-[#0F0F0F] border border-[#2A2A2A] rounded-lg px-3 py-2 text-sm outline-none focus:border-[#FF9F0A]';
 const EXTERNAL: Category[] = ['언론(Earned)', '리뷰·판매(Third-party)', '커뮤니티·영상(UGC)', '위키(지식베이스)', '미분류'];
@@ -107,6 +108,7 @@ export default function OffsiteDiagnosis() {
   const [pid, setPid] = useState<string>('');
   const [runs, setRuns] = useState<OffsiteRun[]>([]);
   const [editing, setEditing] = useState<'new' | 'edit' | null>(null);
+  const [view, setView] = useState<'presence' | 'runs'>('presence');
   const [err, setErr] = useState('');
 
   const [engine, setEngine] = useState<string>('ChatGPT');
@@ -223,6 +225,19 @@ export default function OffsiteDiagnosis() {
       )}
 
       {project && !editing && (
+        <div className="flex gap-1 border-b border-[#262626]">
+          {([['presence', '존재감 진단 (자동)'], ['runs', 'AI 답변 실측 (수동)']] as const).map(([id, label]) => (
+            <button key={id} onClick={() => setView(id)}
+              className={`px-4 py-2 text-sm -mb-px border-b-2 ${view === id ? 'border-[#FF9F0A] text-white' : 'border-transparent text-[#888] hover:text-white'}`}>
+              {label}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {project && !editing && view === 'presence' && <PresencePanel project={project} />}
+
+      {project && !editing && view === 'runs' && (
         <div className="grid xl:grid-cols-[380px_1fr] gap-6">
           {/* 측정 입력 */}
           <aside className="space-y-4 xl:sticky xl:top-6 self-start">
