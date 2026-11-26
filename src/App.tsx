@@ -5,6 +5,7 @@ import {
 import {
   CRITERIA, PLATFORM_LABEL, DiagnoseResult, Platform, ScoredCriterion,
 } from './geoCriteria';
+import TechnicalDiagnosis from './TechnicalDiagnosis';
 
 type Tab = 'content' | 'technical' | 'offsite';
 
@@ -379,9 +380,11 @@ export default function App() {
             </div>
             <VideoDiagnosis />
           </div>
+        ) : tab === 'technical' ? (
+          <TechnicalDiagnosis />
         ) : (
           <div className="h-64 flex items-center justify-center text-[#666] text-sm border border-dashed border-[#262626] rounded-xl">
-            {tab === 'technical' ? '테크니컬 GEO' : '오프사이트 GEO'} — 다음 단계에서 구현 예정
+            오프사이트 GEO — 다음 단계에서 구현 예정
           </div>
         )}
       </div>
