@@ -12,6 +12,7 @@ import { GoogleGenAI, Type, createPartFromUri } from '@google/genai';
 import { buildPrompt, postProcess, DiagnoseInput, Platform, RawResult } from './src/geoCriteria';
 import { runTechnicalDiagnosis } from './technical';
 import { createStore, cleanProject, cleanRun } from './offsiteStore';
+import { runPresence } from './presence';
 
 const PORT = Number(process.env.PORT) || 3000;
 const MODEL = process.env.GEMINI_MODEL || 'gemini-3.6-flash'; // 모델명이 바뀌면 여기만 수정
@@ -209,6 +210,13 @@ async function main() {
   app.delete('/api/offsite/projects/:id', wrap(async (req, res) => { await store.deleteProject(String(req.params.id)); res.json({ ok: true }); }));
   app.get('/api/offsite/projects/:id/runs', wrap(async (req, res) => res.json(await store.listRuns(String(req.params.id)))));
   app.post('/api/offsite/projects/:id/runs', wrap(async (req, res) => res.json(await store.addRun(String(req.params.id), cleanRun(req.body ?? {})))));
+  app.get('/api/offsite/projects/:id/presence', wrap(async (req, res) => res.json(await store.listPresence(String(req.params.id)))));
+  app.post('/api/offsite/projects/:id/presence', wrap(async (req, res) => {
+    const project = (await store.listProjects()).find((p) => p.id === String(req.params.id));
+    if (!project) throw new Error('프로젝트를 찾을 수 없습니다.');
+    res.json(await store.addPresence(await runPresence(project)));
+  }));
+  app.get('/api/offsite/presence-status', (_req, res) => res.json({ youtube: !!process.env.YOUTUBE_API_KEY }));
   app.delete('/api/offsite/runs/:id', wrap(async (req, res) => { await store.deleteRun(String(req.params.id)); res.json({ ok: true }); }));
 
   if (process.env.NODE_ENV !== 'production') {

@@ -7,6 +7,7 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { randomUUID } from 'crypto';
 import { extractCitations, normDomain, OffsiteProject, OffsiteRun, Competitor, Category, CATEGORIES } from './src/offsite';
+import type { PresenceResult } from './src/presenceTypes';
 
 export type ProjectInput = Omit<OffsiteProject, 'id' | 'createdAt'> & { id?: string };
 export type RunInput = { engine: string; prompt: string; answer: string; sources: string };
@@ -19,6 +20,8 @@ interface Store {
   listRuns(projectId: string): Promise<OffsiteRun[]>;
   addRun(projectId: string, r: RunInput): Promise<OffsiteRun>;
   deleteRun(id: string): Promise<void>;
+  listPresence(projectId: string): Promise<PresenceResult[]>;
+  addPresence(r: PresenceResult): Promise<PresenceResult>;
 }
 
 /* ---------- 입력값 정리 ---------- */
@@ -62,8 +65,11 @@ export function cleanRun(b: Record<string, unknown>): RunInput {
 function memoryStore(): Store {
   const projects: OffsiteProject[] = [];
   const runs: OffsiteRun[] = [];
+  const presence: PresenceResult[] = [];
   return {
     kind: 'memory',
+    async listPresence(projectId) { return presence.filter((x) => x.projectId === projectId).slice(-20).reverse(); },
+    async addPresence(r) { const saved = { ...r, id: randomUUID() }; presence.push(saved); return saved; },
     async listProjects() { return [...projects]; },
     async saveProject(p) {
       const i = p.id ? projects.findIndex((x) => x.id === p.id) : -1;
@@ -75,6 +81,7 @@ function memoryStore(): Store {
       const i = projects.findIndex((x) => x.id === id);
       if (i >= 0) projects.splice(i, 1);
       for (let j = runs.length - 1; j >= 0; j--) if (runs[j].projectId === id) runs.splice(j, 1);
+      for (let j = presence.length - 1; j >= 0; j--) if (presence[j].projectId === id) presence.splice(j, 1);
     },
     async listRuns(projectId) { return runs.filter((r) => r.projectId === projectId); },
     async addRun(projectId, r) {
@@ -107,6 +114,14 @@ function supabaseStore(sb: SupabaseClient): Store {
   };
   return {
     kind: 'supabase',
+    async listPresence(projectId) {
+      const rows = check(await sb.from('offsite_presence').select('*').eq('project_id', projectId).order('measured_at', { ascending: false }).limit(20)) as { id: string; result: PresenceResult }[];
+      return rows.map((r) => ({ ...r.result, id: r.id }));
+    },
+    async addPresence(r) {
+      const row = check(await sb.from('offsite_presence').insert({ project_id: r.projectId, measured_at: r.measuredAt, result: r }).select().single()) as { id: string };
+      return { ...r, id: row.id };
+    },
     async listProjects() {
       return (check(await sb.from('offsite_projects').select('*').order('created_at')) as ProjectRow[]).map(toProject);
     },
