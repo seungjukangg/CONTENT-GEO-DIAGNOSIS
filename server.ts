@@ -10,6 +10,7 @@ import path from 'path';
 import fs from 'fs/promises';
 import { GoogleGenAI, Type, createPartFromUri } from '@google/genai';
 import { buildPrompt, postProcess, DiagnoseInput, Platform, RawResult } from './src/geoCriteria';
+import { runTechnicalDiagnosis } from './technical';
 
 const PORT = Number(process.env.PORT) || 3000;
 const MODEL = process.env.GEMINI_MODEL || 'gemini-3.6-flash'; // 모델명이 바뀌면 여기만 수정
@@ -175,6 +176,18 @@ async function main() {
       res.status(500).json({ error: err instanceof Error ? err.message : '분석 중 오류가 발생했습니다.' });
     } finally {
       if (file) await fs.unlink(file.path).catch(() => {});
+    }
+  });
+
+  // 테크니컬 GEO: URL을 받아 AI 크롤러 관점 점검 (Gemini 미사용)
+  app.post('/api/technical-diagnose', async (req, res) => {
+    const url = String(req.body?.url ?? '').trim();
+    if (!url) return res.status(400).json({ error: 'URL을 입력하세요.' });
+    try {
+      res.json(await runTechnicalDiagnosis(url));
+    } catch (err) {
+      console.error(err);
+      res.status(400).json({ error: err instanceof Error ? err.message : '진단 중 오류가 발생했습니다.' });
     }
   });
 
