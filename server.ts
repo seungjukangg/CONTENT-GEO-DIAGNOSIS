@@ -11,6 +11,7 @@ import fs from 'fs/promises';
 import { GoogleGenAI, Type, createPartFromUri } from '@google/genai';
 import { buildPrompt, postProcess, DiagnoseInput, Platform, RawResult } from './src/geoCriteria';
 import { runTechnicalDiagnosis } from './technical';
+import { createStore, cleanProject, cleanRun } from './offsiteStore';
 
 const PORT = Number(process.env.PORT) || 3000;
 const MODEL = process.env.GEMINI_MODEL || 'gemini-3.6-flash'; // 모델명이 바뀌면 여기만 수정
@@ -155,7 +156,7 @@ async function analyzeWithGemini(input: DiagnoseInput, file?: Express.Multer.Fil
 /* ---------- 서버 ---------- */
 async function main() {
   const app = express();
-  app.use(express.json({ limit: '1mb' }));
+  app.use(express.json({ limit: '2mb' }));
 
   app.post('/api/video-diagnose', upload.single('video'), async (req, res) => {
     const file = req.file;
@@ -190,6 +191,25 @@ async function main() {
       res.status(400).json({ error: err instanceof Error ? err.message : '진단 중 오류가 발생했습니다.' });
     }
   });
+
+  // 오프사이트 GEO: 프로젝트·측정 저장 (Supabase 또는 메모리)
+  const store = createStore();
+  const wrap = (fn: (req: express.Request, res: express.Response) => Promise<unknown>) =>
+    async (req: express.Request, res: express.Response) => {
+      try {
+        await fn(req, res);
+      } catch (err) {
+        console.error(err);
+        res.status(400).json({ error: err instanceof Error ? err.message : '처리 중 오류가 발생했습니다.' });
+      }
+    };
+  app.get('/api/offsite/status', (_req, res) => res.json({ db: store.kind }));
+  app.get('/api/offsite/projects', wrap(async (_req, res) => res.json(await store.listProjects())));
+  app.post('/api/offsite/projects', wrap(async (req, res) => res.json(await store.saveProject(cleanProject(req.body ?? {})))));
+  app.delete('/api/offsite/projects/:id', wrap(async (req, res) => { await store.deleteProject(String(req.params.id)); res.json({ ok: true }); }));
+  app.get('/api/offsite/projects/:id/runs', wrap(async (req, res) => res.json(await store.listRuns(String(req.params.id)))));
+  app.post('/api/offsite/projects/:id/runs', wrap(async (req, res) => res.json(await store.addRun(String(req.params.id), cleanRun(req.body ?? {})))));
+  app.delete('/api/offsite/runs/:id', wrap(async (req, res) => { await store.deleteRun(String(req.params.id)); res.json({ ok: true }); }));
 
   if (process.env.NODE_ENV !== 'production') {
     const { createServer } = await import('vite');

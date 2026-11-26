@@ -72,10 +72,10 @@ function ProjectForm({ initial, onSaved, onCancel }: { initial?: OffsiteProject;
   return (
     <Card title={initial ? '프로젝트 설정 수정' : '새 프로젝트'} icon={<Settings2 size={16} />} right={onCancel && <button onClick={onCancel} className="text-[#888] hover:text-white"><X size={16} /></button>}>
       <div className="grid md:grid-cols-2 gap-3">
-        <label className="text-xs text-[#aaa] space-y-1"><span>프로젝트 이름 *</span><input className={input} placeholder="예: EV 타이어 2026 하반기" value={d.name} onChange={(e) => setD({ ...d, name: e.target.value })} /></label>
-        <label className="text-xs text-[#aaa] space-y-1"><span>브랜드명 *</span><input className={input} placeholder="예: 넥센타이어" value={d.brand} onChange={(e) => setD({ ...d, brand: e.target.value })} /></label>
-        <label className="text-xs text-[#aaa] space-y-1"><span>브랜드 다른 표기 (쉼표 구분)</span><input className={input} placeholder="예: 넥센, NEXEN, 엔페라" value={d.brandAliases} onChange={(e) => setD({ ...d, brandAliases: e.target.value })} /></label>
-        <label className="text-xs text-[#aaa] space-y-1"><span>자사 도메인 (쉼표 구분)</span><input className={input} placeholder="예: nexentire.com" value={d.ownedDomains} onChange={(e) => setD({ ...d, ownedDomains: e.target.value })} /></label>
+        <label className="text-xs text-[#aaa] space-y-1"><span>프로젝트 이름 *</span><input className={input} value={d.name} onChange={(e) => setD({ ...d, name: e.target.value })} /></label>
+        <label className="text-xs text-[#aaa] space-y-1"><span>브랜드명 *</span><input className={input} value={d.brand} onChange={(e) => setD({ ...d, brand: e.target.value })} /></label>
+        <label className="text-xs text-[#aaa] space-y-1"><span>브랜드 다른 표기 (쉼표 구분)</span><input className={input} value={d.brandAliases} onChange={(e) => setD({ ...d, brandAliases: e.target.value })} /></label>
+        <label className="text-xs text-[#aaa] space-y-1"><span>자사 도메인 (쉼표 구분)</span><input className={input} value={d.ownedDomains} onChange={(e) => setD({ ...d, ownedDomains: e.target.value })} /></label>
       </div>
       <div className="space-y-2">
         <div className="text-xs text-[#aaa]">경쟁사 (최대 10개)</div>
@@ -232,7 +232,7 @@ export default function OffsiteDiagnosis() {
                   <select className={input} value={engine} onChange={(e) => setEngine(e.target.value)}>{ENGINES.map((e2) => <option key={e2}>{e2}</option>)}</select>
                 </label>
                 <label className="block text-xs text-[#aaa] space-y-1"><span>소비자 프롬프트</span>
-                  <input className={input} list="prev-prompts" placeholder="예: 전기차 타이어 추천해줘" value={prompt} onChange={(e) => setPrompt(e.target.value)} />
+                  <input className={input} list="prev-prompts" value={prompt} onChange={(e) => setPrompt(e.target.value)} />
                   <datalist id="prev-prompts">{prevPrompts.map((p) => <option key={p} value={p} />)}</datalist>
                 </label>
                 <label className="block text-xs text-[#aaa] space-y-1"><span>AI 답변 전체 (복사 버튼으로 복사해 붙여넣기)</span>
